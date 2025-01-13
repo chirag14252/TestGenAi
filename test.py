@@ -12,12 +12,12 @@ import time
 load_dotenv()
 
 api_key = st.secrets["OPENAI_API_KEY"];
-assistant_id = st.secrets["ASSISTANT_ID"];
+ass_id = st.secrets["ASSISTANT_ID"];
 # Initialize the OpenAI client with the provided API key
 client = OpenAI(api_key=api_key)
 
 # Define the assistant ID for the OpenAI API
-ASSISTANT_ID = assistant_id  
+assistant_id = ass_id
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -145,7 +145,9 @@ def save_index_and_mapping(index, file_names, index_path, mapping_path):
     print(f"File mapping saved as '{mapping_path}'.")  # Log the save operation
 
 def check_search_milestones():
+    # print("history", st.session_state.conversation_history)
     count = len(st.session_state.conversation_history)
+    print("count", count)
     if count >= 3 and count <= 5:
         return "Add runtime examples to verify the test cases. "
     
@@ -207,7 +209,7 @@ def query_index(query, conversation_history, k=9, threshold=0.7):
         # Rest of your existing code remains the same
         run = client.beta.threads.runs.create(
             thread_id=st.session_state.thread_id,
-            assistant_id=ASSISTANT_ID
+            assistant_id=ass_id
         )
         
         # Wait for completion with timeout
@@ -475,6 +477,10 @@ def streamlit_ui_new():
             try:
                 game_paths = GAME_PATHS[st.session_state.selected_game]
                 pdf_dir = game_paths["pdf_directory"]
+                for file_name in os.listdir(pdf_dir):
+                    if file_name.endswith(".pdf") and file_name != uploaded_file.name:
+                        file_path = os.path.join(pdf_dir, file_name)
+                        os.remove(file_path)
                 file_path = os.path.join(pdf_dir, uploaded_file.name)
                 
 
@@ -486,7 +492,8 @@ def streamlit_ui_new():
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getvalue())
                         print("file saved")
-                    
+                    st.session_state.documents = None
+                    st.session_state.index = None
                     # Process the PDF
                     with st.spinner("Processing PDFs and creating new index..."):
                         st.session_state.documents = None
