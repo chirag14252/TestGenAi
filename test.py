@@ -394,8 +394,9 @@ def streamlit_ui_new():
     <div class="container">
         <h1 style="color: black; font-size: 4rem;">Test Case Generator</h1>
         <div class="description">
-            Welcome to the Test Case Generator! Our platform helps you create comprehensive test cases with ease. 
-            Whether you're a developer or a QA engineer, streamline your testing process and ensure quality with our AI-powered solutions.
+            Welcome to the Test Case Generator! Our platform helps you create comprehensive test cases with ease.<br>
+            Upload the spec pdf and click generate test cases to generate test cases.<br>
+            <i>Note : 6 to 10 test cases are generated at a time. Click Generated test case again to see more results.</i><br>
         </div>
     </div>
     """, unsafe_allow_html=True)
