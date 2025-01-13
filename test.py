@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from openai import OpenAI
 import faiss
 import numpy as np
@@ -7,11 +8,16 @@ import streamlit as st
 import pickle
 import time
 
+#load the env variables
+load_dotenv()
+
+api_key = st.secrets["OPENAI_API_KEY"];
+assistant_id = st.secrets["ASSISTANT_ID"];
 # Initialize the OpenAI client with the provided API key
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=api_key)
 
 # Define the assistant ID for the OpenAI API
-ASSISTANT_ID = "asst_WQfOoFiMkUvDikJedVHZXDO2"  
+ASSISTANT_ID = assistant_id  
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
