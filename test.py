@@ -411,7 +411,7 @@ def streamlit_ui_new():
     # )
 
     initialize_session_state()  # Initialize session state variables
-    # prep_faiss_index()  # Prepare the FAISS index
+    prep_faiss_index()  # Prepare the FAISS index
 
 
     #chat UI
@@ -459,7 +459,7 @@ def streamlit_ui_new():
             print(f"Submitting query: {query_input}")  # Log the submitted query
             # Create a container for the spinner and text
             with st.spinner("Thinking how a QA will think like..."): 
-                generate_test_cases_query("generate test cases for f{query_input}")  
+                generate_test_cases_query("generate test cases for " + query_input)  
                 st.session_state.clear_input_flag = True 
                 st.rerun()  # Rerun
     
