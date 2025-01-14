@@ -9,12 +9,12 @@ import pickle
 import time
 
 #load the env variables
-# load_dotenv()
+load_dotenv()
 
 api_key = st.secrets["OPENAI_API_KEY"];
 ass_id = st.secrets["ASSISTANT_ID"];
 # Initialize the OpenAI client with the provided API key
-# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=api_key)
 
 # # Define the assistant ID for the OpenAI API
 # ass_id = os.getenv("ASSISTANT_ID")
