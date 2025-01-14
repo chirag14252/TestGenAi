@@ -9,15 +9,15 @@ import pickle
 import time
 
 #load the env variables
-load_dotenv()
+# load_dotenv()
 
 api_key = st.secrets["OPENAI_API_KEY"];
 ass_id = st.secrets["ASSISTANT_ID"];
 # Initialize the OpenAI client with the provided API key
-client = OpenAI(api_key=api_key)
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Define the assistant ID for the OpenAI API
-assistant_id = ass_id
+# # Define the assistant ID for the OpenAI API
+# ass_id = os.getenv("ASSISTANT_ID")
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -52,6 +52,8 @@ def initialize_session_state():
         st.session_state.selected_game = "DTC"  # Default selected game is DTC
     if 'clear_input_flag' not in st.session_state:
         st.session_state.clear_input_flag = False
+    if 'new_file_uploaded' not in st.session_state:
+        st.session_state.new_file_uploaded = False
    
 
 # Function to extract text from a PDF file
@@ -159,10 +161,6 @@ def check_search_milestones():
 def query_index(query, conversation_history, k=9, threshold=0.7):
     """Query using Assistant API with threads"""
     try:
-        # Add template context at the start
-        template_path = os.path.join(script_dir, "testcase/format.pdf")
-        template_text = extract_text_from_pdf(template_path)
-        template_format = chunk_text(template_text)[0]  # Get first chunk as format reference
         
         # Get query embedding and search FAISS index (existing code)
         query_embedding = get_embeddings([query])[0]
@@ -192,7 +190,11 @@ def query_index(query, conversation_history, k=9, threshold=0.7):
 
         context = f"""
         Test Case Template Format:
-        {template_format}
+        - Title: [Brief description of the test case]
+        - Preconditions: [Any setup required before executing the test]
+        - Steps: [Detailed steps to execute the test]
+        - Expected Result: [What should happen after executing the steps]
+        - Status: [Pass/Fail]
         {rules}
         {check_search_milestones()}
         Specification Content:
@@ -250,8 +252,8 @@ def format_conversation_history(history):
     return "\n".join(formatted)  # Return the formatted history as a string
 
 def prep_faiss_index():
+    print("prep_faiss_index called")
     game_paths = GAME_PATHS[st.session_state.selected_game]  # Get paths for the selected game
-    
     if st.session_state.documents is None or st.session_state.index is None:  # Check if documents or index are not loaded
         if os.path.exists(game_paths["index_path"]) and os.path.exists(game_paths["documents_path"]):  # Check if saved files exist
             print(f"Loading saved index and documents for {st.session_state.selected_game}...")  # Log loading operation
@@ -286,7 +288,8 @@ def clear_input():
    
 
 def generate_test_cases_query(query_input):
-    print("submit query called")
+    prep_faiss_index();
+    print("generate_test_cases_query called")
     if query_input.strip():  # Check if there's valid input
         result = query_index(query_input, st.session_state.conversation_history)
         st.session_state.conversation_history.append({
@@ -462,7 +465,7 @@ def streamlit_ui_new():
             print(f"Submitting query: {query_input}")  # Log the submitted query
             # Create a container for the spinner and text
             with st.spinner("Thinking how a QA will think like..."): 
-                generate_test_cases_query("generate test cases for " + query_input)  
+                generate_test_cases_query("generate test cases for " + query_input) 
                 st.session_state.clear_input_flag = True 
                 st.rerun()  # Rerun
     
@@ -478,35 +481,34 @@ def streamlit_ui_new():
             try:
                 game_paths = GAME_PATHS[st.session_state.selected_game]
                 pdf_dir = game_paths["pdf_directory"]
+                faiss_dir = "faiss/dtc"
+                # Remove existing PDF files except the uploaded one
                 for file_name in os.listdir(pdf_dir):
                     if file_name.endswith(".pdf") and file_name != uploaded_file.name:
                         file_path = os.path.join(pdf_dir, file_name)
                         os.remove(file_path)
+                for file_name in os.listdir(faiss_dir):
+                    if file_name.endswith(".idx") or file_name.endswith(".txt") or file_name.endswith(".pkl"):
+                        file_path = os.path.join(faiss_dir, file_name)
+                        os.remove(file_path)
+                
                 file_path = os.path.join(pdf_dir, uploaded_file.name)
                 
-
                 # Check if file already exists
-                if os.path.exists(file_path):
-                    st.session_state.query_input = uploaded_file.name.replace('.pdf', '')
-
-                else:
+                if not os.path.exists(file_path):
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getvalue())
                         print("file saved")
                     st.session_state.documents = None
                     st.session_state.index = None
-                    # Process the PDF
-                    with st.spinner("Processing PDFs and creating new index..."):
-                        st.session_state.documents = None
-                        st.session_state.index = None
-                        st.session_state.conversation_history = []
-                        st.session_state.query_input = uploaded_file.name.replace('.pdf', '')
-                        prep_faiss_index()
-                        success_container = st.empty()
-                        success_container.success(f"✅ Added and processed: {uploaded_file.name}")
-                        success_container.empty()     
+                    st.session_state.conversation_history = []
+                    st.session_state.query_input = uploaded_file.name.replace('.pdf', '')
+                    # Do not call prep_faiss_index here
+                else:
+                    st.session_state.query_input = uploaded_file.name.replace('.pdf', '')
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
+        
     
     # with col3:
     #     if st.button("Clear Chat", use_container_width=False):  # Clear chat button
